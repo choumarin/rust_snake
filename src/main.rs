@@ -18,16 +18,7 @@ fn main() {
 
     init_game(&mut canvas, &mut direction, &mut snake, &mut apple);
     'game: loop {
-        let mut key_pressed = false;
         'event_check: for event in events.poll_iter() {
-            if event.is_keyboard() {
-                // avoid processing more than 1 key
-                if (!key_pressed) {
-                    key_pressed = true;
-                } else {
-                    continue 'event_check;
-                }
-            }
             match event {
                 Event::KeyDown {
                     keycode: Some(Keycode::Up),
@@ -35,6 +26,7 @@ fn main() {
                 } => {
                     if direction != Direction::Down {
                         direction = Direction::Up;
+                        break 'event_check;
                     }
                 }
                 Event::KeyDown {
@@ -43,6 +35,7 @@ fn main() {
                 } => {
                     if direction != Direction::Up {
                         direction = Direction::Down;
+                        break 'event_check;
                     }
                 }
                 Event::KeyDown {
@@ -51,6 +44,7 @@ fn main() {
                 } => {
                     if direction != Direction::Right {
                         direction = Direction::Left;
+                        break 'event_check;
                     }
                 }
                 Event::KeyDown {
@@ -59,6 +53,7 @@ fn main() {
                 } => {
                     if direction != Direction::Left {
                         direction = Direction::Right;
+                        break 'event_check;
                     }
                 }
                 Event::Quit { .. }
