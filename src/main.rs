@@ -12,76 +12,73 @@ fn main() {
     let canvas_width = 20_u32;
     let canvas_height = 20_u32;
     let (mut canvas, mut events) = lib::init(canvas_width, canvas_height);
-    let mut direction = Direction::None;
+    let mut direction = None;
     let mut snake = Snake::new();
     let mut apple = my_snake::make_apple(&snake, &canvas);
-
-    init_game(&mut canvas, &mut direction, &mut snake, &mut apple);
+    let mut apples_eaten = 0;
+    init_game(
+        &mut canvas,
+        &mut direction,
+        &mut snake,
+        &mut apple,
+        &mut apples_eaten,
+    );
     'game: loop {
         'event_check: for event in events.poll_iter() {
             match event {
                 Event::KeyDown {
-                    keycode: Some(Keycode::Up),
-                    ..
+                    timestamp: _timestamp,
+                    window_id: _window_id,
+                    keycode,
+                    scancode: _scancode,
+                    keymod: _keymod,
+                    repeat: _repeat,
                 } => {
-                    if direction != Direction::Down {
-                        direction = Direction::Up;
+                    if keycode == Some(Keycode::Escape) {
+                        println!("escaped");
+                        break 'game;
+                    }
+                    let new_dir = to_direction(keycode.unwrap()).unwrap();
+                    if direction.is_none() || new_dir != direction.as_ref().unwrap().opposite() {
+                        direction = Some(new_dir);
                         break 'event_check;
                     }
                 }
-                Event::KeyDown {
-                    keycode: Some(Keycode::Down),
-                    ..
-                } => {
-                    if direction != Direction::Up {
-                        direction = Direction::Down;
-                        break 'event_check;
-                    }
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::Left),
-                    ..
-                } => {
-                    if direction != Direction::Right {
-                        direction = Direction::Left;
-                        break 'event_check;
-                    }
-                }
-                Event::KeyDown {
-                    keycode: Some(Keycode::Right),
-                    ..
-                } => {
-                    if direction != Direction::Left {
-                        direction = Direction::Right;
-                        break 'event_check;
-                    }
-                }
-                Event::Quit { .. }
-                | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => {
+                Event::Quit { .. } => {
                     println!("closed");
                     break 'game;
                 }
-                _ => continue 'game,
+                _ => {}
             }
         }
         snake.move_towards(&direction);
         match snake.check_colision(&apple, &canvas) {
             None => {}
             Some(Collision::Apple) => {
-                println!("ate apple");
+                apples_eaten += 1;
+                println!("ate apple #{}", apples_eaten);
                 apple = my_snake::make_apple(&snake, &canvas);
-                snake.len = snake.len + 1;
+                snake.len += 1;
             }
             Some(Collision::Snake) => {
                 println!("snake collision");
-                init_game(&mut canvas, &mut direction, &mut snake, &mut apple);
+                init_game(
+                    &mut canvas,
+                    &mut direction,
+                    &mut snake,
+                    &mut apple,
+                    &mut apples_eaten,
+                );
             }
             Some(Collision::Box) => {
                 println!("box collision");
-                init_game(&mut canvas, &mut direction, &mut snake, &mut apple);
+                init_game(
+                    &mut canvas,
+                    &mut direction,
+                    &mut snake,
+                    &mut apple,
+                    &mut apples_eaten,
+                );
             }
         }
         canvas.set_draw_color(Color::RGB(0, 0, 0));
@@ -93,13 +90,25 @@ fn main() {
     }
 }
 
+fn to_direction(keycode: Keycode) -> Option<Direction> {
+    match keycode {
+        Keycode::Right => Some(Direction::Right),
+        Keycode::Left => Some(Direction::Left),
+        Keycode::Down => Some(Direction::Down),
+        Keycode::Up => Some(Direction::Up),
+        _ => None,
+    }
+}
+
 fn init_game(
     canvas: &mut Canvas<Window>,
-    direction: &mut Direction,
+    direction: &mut Option<Direction>,
     snake: &mut Snake,
     apple: &mut Option<Cell>,
-) -> () {
-    *direction = Direction::None;
+    apples_eaten: &mut i32,
+) {
+    *direction = None;
     *snake = Snake::new();
     *apple = my_snake::make_apple(&snake, &canvas);
+    *apples_eaten = 0;
 }
